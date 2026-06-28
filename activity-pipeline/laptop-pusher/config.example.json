@@ -1,0 +1,6 @@
+{
+  "supabase_url": "https://YOUR-PROJECT-REF.supabase.co",
+  "supabase_anon_key": "YOUR-ANON-KEY",
+  "aw_base": "http://localhost:5600/api/0",
+  "device_id": null
+}

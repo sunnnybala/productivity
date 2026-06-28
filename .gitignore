@@ -1,0 +1,40 @@
+# ---- SECRETS (never commit) ----
+**/SECRETS.local.txt
+**/config.json
+.env
+.env.*
+**/.env
+**/.env.*
+*.pem
+
+# keep the safe templates
+!**/config.example.json
+!**/.env.local.example
+
+# ---- dependencies / build output ----
+**/node_modules/
+**/.next/
+**/.vercel/
+**/.gradle/
+**/build/
+**/dist/
+**/app/build/
+**/.cxx/
+local.properties
+
+# ---- binaries / artifacts ----
+*.apk
+*.keystore
+*.jks
+
+# ---- cloned third-party repos (have their own .git; not our code) ----
+/activitywatch/
+/aw-mcp/
+
+# ---- supabase local temp ----
+**/supabase/.branches/
+**/supabase/.temp/
+
+# ---- os ----
+.DS_Store
+Thumbs.db

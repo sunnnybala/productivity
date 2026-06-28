@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Activity Tracking Plan — Simple Version</title>
+<style>
+  :root {
+    --bg: #0f1117; --card: #181b24; --ink: #e6e8ee; --muted: #9aa3b2;
+    --accent: #6ea8fe; --good: #4ade80; --warn: #fbbf24; --line: #2a2f3a;
+    --chip: #232838;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 40px 20px;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.5px; }
+  .sub { color: var(--muted); margin: 0 0 28px; font-size: 17px; }
+  h2 {
+    font-size: 22px; margin: 38px 0 12px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  h3 { font-size: 17px; margin: 22px 0 8px; color: var(--accent); }
+  p { margin: 10px 0; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px 22px; margin: 16px 0;
+  }
+  .goal { border-left: 4px solid var(--accent); }
+  .muted { color: var(--muted); }
+  code { background: var(--chip); padding: 2px 6px; border-radius: 5px; font-size: 13px; }
+  pre {
+    background: #0b0d13; border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px; overflow-x: auto; font-size: 12.5px; line-height: 1.5; color: #c9d1e3;
+  }
+  .step { display: flex; gap: 14px; align-items: flex-start; margin: 14px 0; }
+  .num {
+    flex: 0 0 34px; height: 34px; border-radius: 50%; background: var(--accent);
+    color: #06122b; font-weight: 700; display: grid; place-items: center; font-size: 15px;
+  }
+  .step .body { flex: 1; }
+  .step .body strong { display: block; margin-bottom: 2px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14.5px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; }
+  .pill {
+    display: inline-block; font-size: 12px; padding: 2px 9px; border-radius: 20px;
+    background: var(--chip); color: var(--muted); margin-left: 6px;
+  }
+  .ok { color: var(--good); } .warnc { color: var(--warn); }
+  .who-me { color: var(--good); font-weight: 600; }
+  .who-you { color: var(--warn); font-weight: 600; }
+  .tag { font-size: 12px; background: var(--chip); border:1px solid var(--line);
+    padding: 3px 10px; border-radius: 20px; color: var(--muted); margin-right:6px; }
+  ul { margin: 8px 0; padding-left: 22px; }
+  li { margin: 5px 0; }
+  .footnote { color: var(--muted); font-size: 13px; margin-top: 40px;
+    border-top: 1px solid var(--line); padding-top: 14px; }
+  .phase2 { opacity: 0.72; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>My Activity Tracking Plan</h1>
+  <p class="sub">Plain-English version. The goal: see exactly where my time goes, on my laptop <em>and</em> my phone, all in one place.</p>
+
+  <div class="card goal">
+    <strong>What I'm building (in one sentence):</strong>
+    <p style="margin-bottom:0">A system that quietly collects what I do on my <b>laptop</b> (already happening via ActivityWatch) and on my <b>phone</b> (app usage), and sends both into <b>one shared online database</b> so I can analyze my habits later. Built so my AI agent can summarize it for me down the road, without rebuilding anything.</p>
+  </div>
+
+  <h2>The big picture</h2>
+  <p>Three places, one destination. My laptop and phone each send their activity to a cloud database called <b>Supabase</b>. That's the whole of Phase 1.</p>
+
+<pre>
+   LAPTOP                                  THE CLOUD DATABASE (Supabase)
+   ActivityWatch  ──(sends once a day)──▶  ┌────────────────────────┐
+                                           │  laptop_events         │
+                                           │  phone_app_usage       │
+   PHONE                                   │  (+ a summary table     │
+   tiny app  ─────(sends once a day)────▶  │   ready for later)      │
+                                           └────────────────────────┘
+                                                      │
+                                            LATER (Phase 2): my AI agent
+                                            reads this, writes a daily
+                                            summary into my "brain" (gbrain)
+</pre>
+
+  <div class="card">
+    <strong>Why this design is safe:</strong>
+    <p style="margin-bottom:0">The collecting half only ever <em>writes</em> the raw data. The summarizing half (later) only <em>reads</em> it. They never interfere. That's why I can build the collecting part now and add the smart summaries later with zero rework.</p>
+  </div>
+
+  <h2>The 4 simple pieces</h2>
+
+  <div class="step"><div class="num">1</div><div class="body">
+    <strong>A cloud database (Supabase)</strong>
+    A free online database that both devices send data to. It has separate "drawers" for laptop data and phone data, because they look very different.
+  </div></div>
+
+  <div class="step"><div class="num">2</div><div class="body">
+    <strong>A small laptop script</strong>
+    Runs once a day, grabs everything ActivityWatch recorded since last time, and uploads it. Written in PowerShell (already built into Windows, no extra installs).
+  </div></div>
+
+  <div class="step"><div class="num">3</div><div class="body">
+    <strong>A tiny phone app</strong>
+    A small custom app I'll build for you. Once a day it reads your phone's app-usage (the same numbers Digital Wellbeing shows) and uploads them. Set it up once, then forget it.
+  </div></div>
+
+  <div class="step"><div class="num">4</div><div class="body">
+    <strong>(Later) The AI summary</strong>
+    Phase 2, not now. Your agent reads the database each day and writes a short, useful summary into your brain. We've shaped everything so this just plugs in later.
+  </div></div>
+
+  <h2>The decisions we locked in</h2>
+  <table>
+    <tr><th>Question</th><th>What we chose</th><th>Why, simply</th></tr>
+    <tr><td>How to store the data</td><td><b>Two separate tables</b></td><td>Laptop = thousands of tiny events/day. Phone = a few daily totals. Different shapes, so keep them apart and tidy.</td></tr>
+    <tr><td>How often to upload</td><td><b>Once a day</b> (when you next use the device)</td><td>Barely touches your battery, and it can never lose a day (explained below).</td></tr>
+    <tr><td>Laptop script language</td><td><b>PowerShell</b></td><td>Already on Windows. Nothing extra to install.</td></tr>
+    <tr><td>Phone method</td><td><b>Custom app</b></td><td>Reliable and low-maintenance. Won't silently break like no-code tools can.</td></tr>
+  </table>
+
+  <h2>"But what if a day gets missed?" — it can't</h2>
+  <div class="card">
+    <p>This was your main worry, and the design solves it for free:</p>
+    <ul>
+      <li>The laptop script remembers <b>where it left off</b>.</li>
+      <li>ActivityWatch <b>keeps your full history</b> on the laptop and never deletes it.</li>
+      <li>So whenever the script runs, it uploads <b>everything since last time</b> — even if that's a week.</li>
+    </ul>
+    <p style="margin-bottom:0">Uploading less often only makes the data a bit <em>older</em>, never <em>missing</em>. <span class="ok">No permanent gaps, ever.</span></p>
+  </div>
+
+  <h2>Who does what</h2>
+  <table>
+    <tr><th>Task</th><th>Who</th></tr>
+    <tr><td>Write the laptop script</td><td class="who-me">Me ✓</td></tr>
+    <tr><td>Build the cloud database (tables, security)</td><td class="who-me">Me ✓</td></tr>
+    <tr><td>Build the phone app (hand you a ready file)</td><td class="who-me">Me ✓</td></tr>
+    <tr><td>Create the free Supabase account + give me a token</td><td class="who-you">You (≈2 min)</td></tr>
+    <tr><td>Install the app on your phone + allow "Usage Access"</td><td class="who-you">You (≈3 taps)</td></tr>
+  </table>
+
+  <h2>What we're NOT doing right now</h2>
+  <p class="muted">Deliberately left out of Phase 1 to keep it focused:</p>
+  <ul>
+    <li><span class="tag">later</span>The AI daily summary + writing to your brain (Phase 2).</li>
+    <li><span class="tag">not needed</span>Fancy dashboards / charts.</li>
+    <li><span class="tag">not needed</span>Live/real-time syncing (once a day is plenty).</li>
+    <li><span class="tag">n/a</span>Old data from before ActivityWatch was installed (doesn't exist).</li>
+    <li><span class="tag">n/a</span>iPhone support, multiple users.</li>
+  </ul>
+
+  <h2>What happens next</h2>
+  <div class="card">
+    <p>Everything waits on one small thing only you can do:</p>
+    <div class="step"><div class="num">1</div><div class="body"><strong>You:</strong> create a free Supabase account + project, generate a token, hand it to me.</div></div>
+    <div class="step"><div class="num">2</div><div class="body"><strong>Me:</strong> build the database, the laptop script, and the phone app — in parallel.</div></div>
+    <div class="step"><div class="num">3</div><div class="body"><strong>You:</strong> ~3 taps to install the app and grant permission. Done.</div></div>
+  </div>
+
+  <p class="footnote">This is the simple version. The full technical plan (schema, failure modes, test coverage, exact SQL) lives in <code>PLAN-activity-pipeline.md</code> in the same folder.</p>
+
+</div>
+</body>
+</html>
