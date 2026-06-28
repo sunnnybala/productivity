@@ -53,7 +53,9 @@ for b in buckets:
     out = []
     for e in sorted(evs, key=lambda x: x["timestamp"]):
         d = e.get("data", {})
-        out.append({"id": "%s|%s|%s|%s" % (device_id, b, e.get("id"), e["timestamp"]),
+        # id = device|bucket|ts  (NOT event_id: AW reassigns event ids on every read for
+        # growing afk/idle events, which created duplicate rows. ts is the stable natural key.)
+        out.append({"id": "%s|%s|%s" % (device_id, b, e["timestamp"]),
                     "device_id": device_id, "source": src, "bucket": b, "ts": e["timestamp"],
                     "duration_sec": float(e.get("duration", 0)), "app": d.get("app"),
                     "title": d.get("title"), "url": d.get("url"), "category": None, "data": d})

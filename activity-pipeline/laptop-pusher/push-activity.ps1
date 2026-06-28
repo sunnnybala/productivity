@@ -121,7 +121,9 @@ foreach ($b in $buckets) {
 
   $rows = foreach ($e in $events) {
     [pscustomobject]@{
-      id           = ('{0}|{1}|{2}|{3}' -f $deviceId, $b, $e.id, $e.timestamp)
+      # id = device|bucket|ts  (NOT event_id: AW reassigns event ids on every read for
+      # growing afk/idle events, which created duplicate rows. ts is the stable natural key.)
+      id           = ('{0}|{1}|{2}' -f $deviceId, $b, $e.timestamp)
       device_id    = $deviceId
       source       = $source
       bucket       = $b

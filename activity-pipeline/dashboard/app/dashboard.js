@@ -72,7 +72,10 @@ export default function Dashboard({ persons }) {
 
   const days = data?.days || [];
   const maxDay = Math.max(1, ...days.map((d) => Number(d.laptop) + Number(d.phone)));
-  const total = (Number(data?.laptop_min) || 0) + (Number(data?.phone_min) || 0);
+  const focused = Number(data?.laptop_min) || 0;
+  const active = Number(data?.laptop_active_min) || 0;
+  const pctHands = focused > 0 ? Math.round((active / focused) * 100) : 0;
+  const total = focused + (Number(data?.phone_min) || 0);
 
   return (
     <main style={{ minHeight: '100vh', background: C.bg, color: C.ink,
@@ -118,25 +121,32 @@ export default function Dashboard({ persons }) {
 
         {/* KPI cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginTop: 20, opacity: loading ? 0.5 : 1 }}>
-          <Kpi label="💻 Laptop" value={fmt(data?.laptop_min)} color={C.blue} />
+          <Kpi label="💻 Laptop" value={fmt(focused)} color={C.blue}
+            sub={data ? `${fmt(active)} active · ${pctHands}% hands-on` : null} />
           <Kpi label="📱 Phone" value={fmt(data?.phone_min)} color={C.orange} />
-          <Kpi label="Σ Total" value={fmt(total)} color={C.ink} />
+          <Kpi label="Σ Total" value={fmt(total)} color={C.ink}
+            sub={data ? 'laptop focused + phone' : null} />
         </div>
 
         {/* Daily chart */}
         <section style={{ ...panel, marginTop: 16 }}>
-          <h3 style={h3}>Daily — <span style={{ color: C.blue }}>laptop</span> + <span style={{ color: C.orange }}>phone</span></h3>
+          <h3 style={h3}>Daily — laptop <span style={{ color: C.blue }}>active</span> /{' '}
+            <span style={{ color: C.blue, opacity: 0.45 }}>focused</span> + <span style={{ color: C.orange }}>phone</span></h3>
           {days.length === 0 && !loading ? <Empty /> :
             days.map((d) => {
-              const lap = Number(d.laptop), ph = Number(d.phone);
+              const lap = Number(d.laptop);                         // focused
+              const act = Number(d.laptop_active) || 0;             // hands-on
+              const idle = Math.max(0, lap - act);                  // focused-but-idle
+              const ph = Number(d.phone);
               return (
                 <div key={d.day} style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '7px 0', fontSize: 12 }}>
                   <span style={{ width: 64, color: C.muted }}>{d.day.slice(5)}</span>
                   <div style={{ flex: 1, height: 16, background: '#0a0c11', borderRadius: 4, overflow: 'hidden', display: 'flex' }}>
-                    <div title={`laptop ${fmt(lap)}`} style={{ width: `${(lap / maxDay) * 100}%`, background: C.blue }} />
+                    <div title={`active ${fmt(act)}`} style={{ width: `${(act / maxDay) * 100}%`, background: C.blue }} />
+                    <div title={`focused-only ${fmt(idle)}`} style={{ width: `${(idle / maxDay) * 100}%`, background: C.blue, opacity: 0.4 }} />
                     <div title={`phone ${fmt(ph)}`} style={{ width: `${(ph / maxDay) * 100}%`, background: C.orange }} />
                   </div>
-                  <span style={{ width: 120, textAlign: 'right', color: '#c9d1e3' }}>{fmt(lap)} / {fmt(ph)}</span>
+                  <span style={{ width: 130, textAlign: 'right', color: '#c9d1e3' }}>{fmt(lap)} / {fmt(ph)}</span>
                 </div>
               );
             })}
@@ -150,8 +160,10 @@ export default function Dashboard({ persons }) {
         </div>
 
         <p style={{ color: '#5b6472', fontSize: 11, marginTop: 26 }}>
-          Laptop = window-foreground active time. Phone = app foreground time. Phone browser sites
-          aren't captured (app-level only).
+          Laptop headline = focused time (a window in foreground). Active = focused minus idle
+          (no keyboard/mouse &gt;3 min), so reading, calls and watching show up as the gap. Total =
+          laptop focused + phone. Websites are a breakdown of browser time, not added to the total.
+          Phone browser sites aren&apos;t captured (app-level only).
         </p>
       </div>
     </main>
@@ -162,11 +174,12 @@ const inp = { background: C.card, color: C.ink, border: `1px solid ${C.line}`, b
 const panel = { background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: 18 };
 const h3 = { margin: '0 0 12px', fontSize: 14, fontWeight: 600 };
 
-function Kpi({ label, value, color }) {
+function Kpi({ label, value, color, sub }) {
   return (
     <div style={{ ...panel, padding: 18 }}>
       <div style={{ color: C.muted, fontSize: 13 }}>{label}</div>
       <div style={{ fontSize: 30, fontWeight: 700, marginTop: 6, color }}>{value}</div>
+      <div style={{ color: C.muted, fontSize: 12, marginTop: 4, minHeight: 15 }}>{sub || ''}</div>
     </div>
   );
 }

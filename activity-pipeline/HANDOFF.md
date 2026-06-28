@@ -249,4 +249,30 @@ Dual-model (Codex + independent Claude subagent), repeatedly:
 - `supabase/` — schema.sql + migrations.
 - `dashboard/` — Next.js dashboard app.
 - `SECRETS.local.txt` — DB password (gitignored).
+- `INGESTION-RULES.md` — correctness contract for any agent/script pushing events.
 - `HANDOFF.md` — this file.
+
+---
+
+## 13. Time-correctness audit (2026-06-29) — fixes applied
+
+Ran two sub-agents (AW event semantics + pipeline audit) plus direct DB verification.
+
+- **afk duplication bug (FIXED).** Row id was `device|bucket|event_id|ts`. ActivityWatch
+  reassigns `event_id` on every read of a still-growing idle event, so each read inserted a
+  NEW row → one idle period became dozens of overlapping rows (saw 139h of "afk" in a 24h
+  day). Window events were unaffected (stable ids). Fix: id is now `device|bucket|ts` in both
+  pushers; migration `...000400` deduped history (kept MAX duration per natural key, 0 dupes
+  left) and added a monotonic-duration guard trigger. See `INGESTION-RULES.md` rule 4.
+- **Laptop metric is now BOTH numbers.** Headline = **focused** (raw window foreground);
+  secondary = **active** (`window ∩ not-afk`). On real data, active ≈ 50% of focused (range
+  15-83%/day) because AW's afk is keyboard/mouse only — reading/calls/watching show as the
+  gap. RPC `dashboard_summary` returns `laptop_min` (focused) + `laptop_active_min`; the
+  dashboard shows both (KPI sub-line + split daily bar). Migrations `...000200/000300/000500`.
+- **`v_daily_rollup` footgun documented.** Summing across `source` triple-counts
+  (window+afk+web). Use `v_laptop_active` for active; comment added on the view.
+- **Phone monotonic merge (FIXED).** Trigger keeps `GREATEST(old,new)` minutes per
+  (device,date,package) so a retention-edge re-read can't lower a good day. Migration `...000200`.
+- **Verified clean:** no window+web or window+afk double-count in any shipped surface;
+  timezones aligned IST end-to-end; laptop dedup idempotent; both numbers verified against
+  day-clipped merged-interval ground truth.
