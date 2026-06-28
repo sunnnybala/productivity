@@ -17,7 +17,7 @@ export async function POST(req) {
       sameSite: 'strict',
       path: '/',
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 30,
+      maxAge: 60 * 60 * 24 * 365, // 1 year — stay logged in on this browser
     });
     return res;
   }
