@@ -329,3 +329,33 @@ dashboard. Plan + Codex review: `PLAN-phone-ambient.md`.
   `CO-FOUNDER-SETUP.md` §6a. Wayland caveat noted (eww/plasmoid alternative).
 - **Phone widget (both): AnyWidget** ("website as widget") pointed at `/ambient?...&w=1`. ColorOS
   battery whitelist required.
+
+---
+
+## 16. Focused vs active time + AFK timeout (2026-06-30)
+
+**Definitions (ActivityWatch):**
+- **Focused / window time** = a window was in the foreground, **regardless of input**. Counts
+  overnight, while reading, while watching, while away (screen on).
+- **Active time** = focused **∩ not-afk**, where `aw-watcher-afk` watches keyboard+mouse and flips
+  you to "afk" after a no-input timeout. **AFK is backdated to your last input** — when the timeout
+  fires, the whole silent stretch (including those first minutes) is marked idle, from the last
+  keystroke. The timeout is a detection delay, NOT a grace period you keep.
+
+**AFK timeout changed 180s → 300s (5 min) on Dhruv's laptop** (`%LOCALAPPDATA%\activitywatch\
+activitywatch\aw-watcher-afk\aw-watcher-afk.toml`: uncommented `timeout = 300`, restarted AW).
+- **Forward-only** (past events keep their 180s classification).
+- Effect is **small**: raising the cutoff only rescues idle gaps *between* 3 and 5 min (+~3–40
+  min/day in simulation). The big focused-vs-active gap is dominated by **long** idle — laptop
+  on ~24/7 + multi-minute stretches of watching Claude Code run / reading (no typing >5 min),
+  which the cutoff doesn't touch. Focus is unchanged by the timeout.
+- **Ria:** to match, set `timeout = 300` in her `aw-watcher-afk.toml` and restart AW. Note: on a
+  **Wayland** session the afk watcher can under-detect input, making her active artificially low
+  regardless (see CO-FOUNDER-SETUP §7).
+
+**What the dashboard/widgets show:** laptop **focused** (not active). Phone usage is foreground
+time (Android has no afk concept) → comparable to laptop **focused**, not active. So focused↔phone
+is the apples-to-apples comparison; showing focused is deliberate.
+
+**Considered + declined (2026-06-30):** marking apps "always active" / a media watcher (would make
+watching-Claude count as active). User chose to keep it strict.

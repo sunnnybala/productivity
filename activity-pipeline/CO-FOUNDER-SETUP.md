@@ -339,3 +339,27 @@ https://dashboard-five-beta-46.vercel.app/ambient?k=<AMBIENT_TOKEN>&person=cofou
 That renders a tight version with all 3 stats stacked, fitting a small tile. Apply the ColorOS
 battery whitelist (Auto-launch on, Allow background, Don't optimize, Lock in Recents) or it
 freezes. `$` is notional; phone shows ~0 until the nightly phone upload.
+
+---
+
+## 7. AFK timeout (focused vs active) — optional, to match Dhruv
+
+The dashboard's "active" laptop number = window-focused time **and** keyboard/mouse input within
+the AFK timeout. Default is **180s (3 min)**; Dhruv set his to **5 min**. To match on her laptop,
+edit her AFK config and restart AW:
+
+`~/.config/activitywatch/aw-watcher-afk/aw-watcher-afk.toml` (path may vary; it's the AW config
+dir), set:
+```toml
+[aw-watcher-afk]
+timeout = 300
+poll_time = 5
+```
+Then restart ActivityWatch (`aw-qt` tray → Quit, relaunch; or restart `aw-watcher-afk`).
+
+Notes:
+- Forward-only (past data keeps the old classification). The effect is small — it only rescues
+  3–5 min pauses; long idle still counts as away.
+- **Wayland caveat:** on a Wayland session the afk watcher can under-detect input, so *active* may
+  read artificially low no matter the timeout. *Focused* and phone numbers are unaffected. Check
+  `echo $XDG_SESSION_TYPE`; the dashboard headline uses **focused**, so this mostly doesn't matter.

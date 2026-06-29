@@ -102,3 +102,13 @@ A small always-visible box showing today's Laptop / Phone / Tokens(+$). Both rea
   ColorOS battery whitelist so it keeps refreshing.
 
 `$` is notional (not a bill). Phone shows ~0 until the nightly phone upload.
+
+---
+
+## 7. (Optional) Match the AFK timeout
+
+Dhruv changed the ActivityWatch AFK timeout from 3 min → **5 min** (affects the "active" laptop
+number only; "focused" is unchanged). To match, set `timeout = 300` in her
+`aw-watcher-afk.toml` and restart AW — steps in `CO-FOUNDER-SETUP.md` §7. Low priority; the
+dashboard headline shows **focused** time anyway, and on Wayland the afk/active signal is
+unreliable regardless.
