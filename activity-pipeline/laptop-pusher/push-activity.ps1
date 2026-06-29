@@ -136,6 +136,12 @@ foreach ($b in $buckets) {
       data         = $e.data
     }
   }
+  # AW returns the open afk event many times with the SAME timestamp (growing duration).
+  # Our id is device|bucket|ts, so collapse same-id rows here (keep max duration) — otherwise
+  # the batch has duplicate ids and PostgREST 500s (ON CONFLICT can't affect a row twice).
+  $rows = @($rows | Group-Object id | ForEach-Object {
+    $_.Group | Sort-Object { [double]$_.duration_sec } -Descending | Select-Object -First 1
+  })
   $rows = @($rows | Sort-Object ts)
   $maxTs = $rows[-1].ts
 

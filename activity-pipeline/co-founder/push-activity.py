@@ -59,6 +59,15 @@ for b in buckets:
                     "device_id": device_id, "source": src, "bucket": b, "ts": e["timestamp"],
                     "duration_sec": float(e.get("duration", 0)), "app": d.get("app"),
                     "title": d.get("title"), "url": d.get("url"), "category": None, "data": d})
+    # AW returns the open afk event many times with the SAME timestamp (growing duration).
+    # id is device|bucket|ts, so collapse same-id rows (keep max duration) before upserting,
+    # else the batch has duplicate ids and PostgREST 500s (ON CONFLICT can't affect a row twice).
+    _by_id = {}
+    for r in out:
+        ex = _by_id.get(r["id"])
+        if ex is None or r["duration_sec"] > ex["duration_sec"]:
+            _by_id[r["id"]] = r
+    out = sorted(_by_id.values(), key=lambda x: x["ts"])
     ok = True
     for i in range(0, len(out), BATCH):
         try:
