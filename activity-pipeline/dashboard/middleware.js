@@ -3,7 +3,9 @@ import { NextResponse } from 'next/server';
 // Gate everything behind the shared password cookie, except the exact login routes + assets.
 // NOTE: middleware is an OPTIMISTIC gate only — page.js re-checks auth at the data layer
 // (middleware is not a security boundary; see CVE-2025-29927).
-const PUBLIC = new Set(['/login', '/api/login']);
+// /api/ambient.json checks the token itself in the route handler (the real boundary),
+// so middleware just lets it pass — no duplicate token logic here (Codex review).
+const PUBLIC = new Set(['/login', '/api/login', '/api/ambient.json']);
 
 // Ambient (wallpaper/PWA) page: token in the URL instead of the login cookie.
 // Fail closed — unset/short AMBIENT_TOKEN denies (Codex #2). The page re-checks too.
