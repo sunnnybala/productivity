@@ -74,7 +74,8 @@ next to a `config.json`.
 > reinstall/reset, which would otherwise create a second "unmapped" device and fragment her
 > history. Pinning keeps it stable, and you register that one id in the `devices` table.
 
-`push-activity.py`:
+`push-activity.py` *(this mirrors the canonical `co-founder/push-activity.py` in the repo —
+prefer **copying that file** after `git pull` so it never drifts from the fixes)*:
 ```python
 #!/usr/bin/env python3
 # Laptop -> Supabase activity pusher (Linux/macOS). Incremental + idempotent.
@@ -127,10 +128,20 @@ for b in buckets:
     out = []
     for e in sorted(evs, key=lambda x: x["timestamp"]):
         d = e.get("data", {})
-        out.append({"id": "%s|%s|%s|%s" % (device_id, b, e.get("id"), e["timestamp"]),
+        # id = device|bucket|ts (NOT event_id: AW reassigns it on every read of a growing
+        # idle event, which created duplicate afk rows).
+        out.append({"id": "%s|%s|%s" % (device_id, b, e["timestamp"]),
                     "device_id": device_id, "source": src, "bucket": b, "ts": e["timestamp"],
                     "duration_sec": float(e.get("duration", 0)), "app": d.get("app"),
                     "title": d.get("title"), "url": d.get("url"), "category": None, "data": d})
+    # AW returns the open afk event many times with the SAME timestamp; under the new id those
+    # collapse to duplicate ids in one batch and PostgREST 500s. De-dupe by id (keep max duration).
+    _by_id = {}
+    for r in out:
+        ex = _by_id.get(r["id"])
+        if ex is None or r["duration_sec"] > ex["duration_sec"]:
+            _by_id[r["id"]] = r
+    out = sorted(_by_id.values(), key=lambda x: x["ts"])
     ok = True
     for i in range(0, len(out), BATCH):
         try:

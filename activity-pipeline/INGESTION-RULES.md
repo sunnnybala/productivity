@@ -50,6 +50,13 @@ the intersection — it is never added to a total. The DB now enforces the lapto
    dozens of overlapping rows (139h of "afk" in a 24h day). The event start `ts` is the stable
    natural key within a bucket. Never put `event_id` in the id.
 
+4b. **De-dupe rows by id WITHIN each upsert batch (keep max duration) before sending.** AW
+   returns the open afk event many times with the SAME timestamp (we saw 80 events → 7 distinct
+   timestamps, one repeated 47×). Under the `device|bucket|ts` id those collapse to duplicate ids
+   in one batch, and PostgREST rejects the whole batch with a 500 (`ON CONFLICT DO UPDATE cannot
+   affect a row a second time`) — so afk silently stops landing and "active" reads 0. Collapse
+   same-id rows (keep the largest duration) in the pusher before the POST. Both pushers do this.
+
 5. **Re-read with a ≥5-minute overlap before the cursor.** ActivityWatch's last (open) event
    keeps growing — its `duration` extends via heartbeats while its `ts` stays fixed. The
    overlap re-read lets that final duration land. Only advance the cursor to `max(ts)` of a
