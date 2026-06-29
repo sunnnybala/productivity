@@ -1,5 +1,8 @@
 # Rainmeter desktop widget (laptop corner box)
 
+> **Windows only.** Rainmeter does not run on Linux. On EndeavourOS/Arch (Ria), use **Conky**
+> instead (same idea, same `/api/ambient.json` endpoint) — config in `../CO-FOUNDER-SETUP.md` §6a.
+
 A tiny bottom-right desktop widget over your own wallpaper showing **today's** Laptop time,
 Phone time, and Tokens (+ notional $). Sits on the desktop layer (behind windows), refreshes
 every 60s. Reads `GET /api/ambient.json?k=<token>&person=<name>` (preformatted fields, so the

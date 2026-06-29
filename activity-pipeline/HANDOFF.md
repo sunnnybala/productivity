@@ -302,3 +302,30 @@ Plan: `PLAN-token-spend.md` (eng-reviewed + Claude outside-voice review; Codex k
   2.40B/$2,626; RPC + auth confirmed; both numbers track the manual ccusage run.
 - **Gotcha logged:** `& npx @array` splatting breaks npx on Windows ("could not determine
   executable") — call npx as a native token-by-token command instead.
+
+---
+
+## 15. Ambient "today" view + widgets (2026-06-30)
+
+Goal: glanceable today stats (Laptop time, Phone time, Tokens + notional $) without opening the
+dashboard. Plan + Codex review: `PLAN-phone-ambient.md`.
+
+- **`/ambient` page** (`app/ambient/page.js`): token-authed (`?k=`), big dark auto-refreshing
+  stats. `?w=1` renders a **compact** top-left layout that fits a small widget tile (the full
+  layout only showed a top-left crop inside small web-widgets). `?person=` selects whose data.
+- **`/api/ambient.json`** (`app/api/ambient.json/route.js`): compact JSON for widgets —
+  `{person,date,laptop_min,phone_min,tokens,cost, laptop_fmt,phone_fmt,tokens_fmt,cost_fmt}`
+  (preformatted strings so dumb widgets need no math). Token-authed; in middleware `PUBLIC`
+  (route handler is the auth boundary). Both `/ambient` and the route share `lib/ambient.js`
+  (`ambientTokenOk` + `getAmbientSummary` + headers) — single source of truth (Codex DRY fix).
+- **Auth:** `AMBIENT_TOKEN` env (Vercel), fail-closed (require len≥32). Security headers on both
+  surfaces (`no-store`, `no-referrer`, `noindex`). Token lives only in device config, never a
+  public file (no PWA manifest). Rotate `AMBIENT_TOKEN` to revoke.
+- **Laptop widget (Windows / Dhruv): Rainmeter** — skin in `rainmeter/Ambient/Ambient.ini`
+  (WebParser, no plugin; reads the JSON's `*_fmt` fields). Installed + verified fetching live
+  data; bottom-right, on-desktop (behind windows), auto-starts on login. Token is a placeholder
+  in the repo copy; real token only in `Documents\Rainmeter\Skins\Ambient\Ambient.ini`.
+- **Laptop widget (Linux / Ria): Conky** (Rainmeter is Windows-only) — config + fetch script in
+  `CO-FOUNDER-SETUP.md` §6a. Wayland caveat noted (eww/plasmoid alternative).
+- **Phone widget (both): AnyWidget** ("website as widget") pointed at `/ambient?...&w=1`. ColorOS
+  battery whitelist required.

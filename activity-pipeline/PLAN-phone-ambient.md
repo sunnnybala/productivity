@@ -1,5 +1,12 @@
 # PLAN — Zero-Tap 3-Stat Ambient View on a realme/ColorOS Home Screen
 
+> **STATUS (2026-06-30): shipped, widget approach.** Built `/api/ambient.json` + a compact
+> `/ambient?w=1` layout. Phone uses **AnyWidget** (website-as-widget) pointed at `…?w=1` (small
+> tile, not full wallpaper). Laptop uses a small corner widget: **Rainmeter** (Windows/Dhruv,
+> installed+verified) / **Conky** (Linux/Ria — Rainmeter is Windows-only; see CO-FOUNDER-SETUP
+> §6a). Full-screen wallpaper (Phase 1/2 below) was the original idea; the small widget won out.
+> See HANDOFF §15.
+
 Goal: the 3 stats (laptop time, phone time, tokens + notional cost) are visible the instant the
 phone is unlocked, behind the app icons, with no tap and no app open. Two phases: a zero-build
 "web page as live wallpaper" route first, then a KLWP + JSON-endpoint route as the reliable backup.

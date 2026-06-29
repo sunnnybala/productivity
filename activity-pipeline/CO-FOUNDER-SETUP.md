@@ -272,3 +272,70 @@ the one-time laptop `device_id` pinning note in step 2 so it stays stable.)
 A Next.js site on Vercel reading the shared Supabase, showing both people's time side by
 side (apps, sites, daily/weekly). Decision points: privacy/consent scope, shared-vs-separate
 DB (above), and what granularity to expose. Brainstormed separately.
+
+---
+
+## 6. Ambient widgets — the "today" box on laptop + phone
+
+Small always-visible box showing **today's** Laptop time, Phone time, Tokens (+ notional $).
+Both pull one endpoint: `GET /api/ambient.json?k=<AMBIENT_TOKEN>&person=cofounder`
+(returns preformatted fields `laptop_fmt`, `phone_fmt`, `tokens_fmt`, `cost_fmt`). Ask Dhruv for
+the real `<AMBIENT_TOKEN>`.
+
+### 6a. Laptop (EndeavourOS) — Conky (Rainmeter is Windows-only)
+Rainmeter doesn't exist on Linux. The equivalent is **Conky** — a lightweight desktop widget that
+sits on the wallpaper layer. It works great on **X11**; on a **Wayland** session it's limited
+(check with `echo $XDG_SESSION_TYPE`) — if Wayland, either use an X11 session, a Conky build with
+Wayland support, or **eww** / a KDE plasmoid instead. Her agent should pick based on her DE/session.
+
+```bash
+sudo pacman -S --needed conky curl jq
+```
+
+`~/ambient-widget.sh` (chmod +x):
+```bash
+#!/usr/bin/env bash
+URL="https://dashboard-five-beta-46.vercel.app/api/ambient.json?k=<AMBIENT_TOKEN>&person=cofounder"
+curl -s --max-time 10 "$URL" \
+ | jq -r '"Laptop   \(.laptop_fmt)\nPhone    \(.phone_fmt)\nTokens   \(.tokens_fmt)  (\(.cost_fmt))"' \
+ 2>/dev/null || echo "unavailable"
+```
+
+`~/.config/conky/ambient.conf`:
+```lua
+conky.config = {
+    own_window = true,
+    own_window_type = 'desktop',
+    own_window_transparent = true,
+    own_window_argb_visual = true,
+    own_window_argb_value = 200,
+    own_window_hints = 'undecorated,below,sticky,skip_taskbar,skip_pager',
+    alignment = 'bottom_right',
+    gap_x = 16, gap_y = 48,
+    minimum_width = 210,
+    update_interval = 60,
+    double_buffer = true,
+    use_xft = true,
+    font = 'DejaVu Sans:size=11',
+    default_color = 'CCCCCC',
+};
+conky.text = [[
+${color 8B94A7}RIA - TODAY
+${color CCCCCC}${execi 60 bash ~/ambient-widget.sh}
+]];
+```
+Run + autostart:
+```bash
+conky -c ~/.config/conky/ambient.conf &      # test it appears bottom-right
+# autostart: add the same line to your DE's Autostart, or a ~/.config/autostart/conky.desktop
+```
+
+### 6b. Phone — AnyWidget (already installed)
+You already added the widget. It was showing only the top-left corner because the page was
+full-screen-sized. Fix: in AnyWidget, set the URL to the **compact** layout by adding `&w=1`:
+```
+https://dashboard-five-beta-46.vercel.app/ambient?k=<AMBIENT_TOKEN>&person=cofounder&w=1
+```
+That renders a tight version with all 3 stats stacked, fitting a small tile. Apply the ColorOS
+battery whitelist (Auto-launch on, Allow background, Don't optimize, Lock in Recents) or it
+freezes. `$` is notional; phone shows ~0 until the nightly phone upload.

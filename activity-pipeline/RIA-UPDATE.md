@@ -84,3 +84,21 @@ laptop time, phone time, tokens). For the full interactive dashboard instead, op
 **📱 Phone activity app** — already set up; nothing new (token tracking is laptop-only).
 
 (Dhruv: paste the real `?k=` token into the link above before sending — it's the shared ambient secret.)
+
+---
+
+## 6. Ambient "today" widgets (new) — laptop box + phone tile
+
+A small always-visible box showing today's Laptop / Phone / Tokens(+$). Both read
+`GET /api/ambient.json?k=<AMBIENT_TOKEN>&person=cofounder` (ask Dhruv for the token).
+
+- **Laptop (EndeavourOS):** Rainmeter is **Windows-only**, so use **Conky** instead (the Linux
+  desktop-widget equivalent), pulling the same endpoint. Full config + script in
+  `CO-FOUNDER-SETUP.md` §6a. (Wayland session → use eww/a KDE plasmoid, or an X11 session; check
+  `echo $XDG_SESSION_TYPE`.)
+- **Phone:** you already have the AnyWidget set up — it was showing only the top-left corner
+  because the page was full-screen-sized. Fix: change the widget URL to add **`&w=1`** (compact
+  layout that fits a small tile): `…/ambient?k=<AMBIENT_TOKEN>&person=cofounder&w=1`. Apply the
+  ColorOS battery whitelist so it keeps refreshing.
+
+`$` is notional (not a bill). Phone shows ~0 until the nightly phone upload.
