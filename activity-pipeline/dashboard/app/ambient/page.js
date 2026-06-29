@@ -29,21 +29,27 @@ export default async function Ambient(props) {
     err = String(e?.message || e);
   }
 
-  const active = Number(act?.laptop_active_min) || 0;
+  const laptop = Number(act?.laptop_min) || 0;   // time spent (window in foreground)
   const phone = Number(act?.phone_min) || 0;
   const tokens = Number(tok?.total_tokens) || 0;
   const cost = Number(tok?.total_cost) || 0;
-  const apps = (act?.laptop_apps || []).slice(0, 4);
 
   const wrap = {
     minHeight: '100vh', background: C.bg, color: C.ink, display: 'flex',
-    flexDirection: 'column', justifyContent: 'center', gap: 28,
-    padding: 'clamp(24px, 6vw, 80px)', boxSizing: 'border-box',
+    flexDirection: 'column', justifyContent: 'center', gap: 'clamp(28px, 6vh, 64px)',
+    padding: 'clamp(24px, 6vw, 90px)', boxSizing: 'border-box',
     fontFamily: '-apple-system, "Segoe UI", Roboto, sans-serif',
   };
-  const big = { fontSize: 'clamp(48px, 13vw, 150px)', fontWeight: 800, letterSpacing: -2, lineHeight: 0.95 };
-  const lbl = { color: C.muted, fontSize: 'clamp(12px, 2.4vw, 18px)', textTransform: 'uppercase', letterSpacing: 2 };
-  const sub = { fontSize: 'clamp(20px, 4.5vw, 44px)', fontWeight: 700 };
+  const lbl = { color: C.muted, fontSize: 'clamp(13px, 2.4vw, 20px)', textTransform: 'uppercase', letterSpacing: 2 };
+  const big = { fontSize: 'clamp(52px, 12vw, 140px)', fontWeight: 800, letterSpacing: -2, lineHeight: 0.95, marginTop: 4 };
+
+  const Stat = ({ label, value, color, note }) => (
+    <div>
+      <div style={lbl}>{label}</div>
+      <div style={{ ...big, color }}>{value}</div>
+      {note ? <div style={{ color: C.muted, fontSize: 'clamp(16px, 3vw, 30px)', fontWeight: 600, marginTop: 6 }}>{note}</div> : null}
+    </div>
+  );
 
   return (
     <main style={wrap}>
@@ -56,32 +62,9 @@ export default async function Ambient(props) {
         <div style={{ color: C.orange, fontSize: 22 }}>data unavailable — retrying…</div>
       ) : (
         <>
-          <div>
-            <div style={lbl}>💻 active</div>
-            <div style={{ ...big, color: C.blue }}>{fmtDuration(active)}</div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 'clamp(24px, 8vw, 90px)', flexWrap: 'wrap' }}>
-            <div>
-              <div style={lbl}>📱 phone</div>
-              <div style={{ ...sub, color: C.orange }}>{fmtDuration(phone)}</div>
-            </div>
-            <div>
-              <div style={lbl}>🔢 tokens</div>
-              <div style={{ ...sub, color: C.green }}>
-                {fmtTokens(tokens)} <span style={{ color: C.muted, fontSize: '0.5em', fontWeight: 500 }}>≈ {fmtUSD(cost)} notional</span>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div style={lbl}>top apps</div>
-            <div style={{ fontSize: 'clamp(14px, 2.8vw, 22px)', color: '#c9d1e3', marginTop: 6 }}>
-              {apps.length === 0 ? '—' : apps.map((a, i) => (
-                <span key={i}>{i > 0 ? '  ·  ' : ''}{a.name} <span style={{ color: C.muted }}>{fmtDuration(a.minutes)}</span></span>
-              ))}
-            </div>
-          </div>
+          <Stat label="💻 Laptop" value={fmtDuration(laptop)} color={C.blue} />
+          <Stat label="📱 Phone" value={fmtDuration(phone)} color={C.orange} />
+          <Stat label="🔢 Tokens" value={fmtTokens(tokens)} color={C.green} note={`≈ ${fmtUSD(cost)} notional`} />
         </>
       )}
 
