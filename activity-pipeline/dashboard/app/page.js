@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { sb } from '../lib/db';
-import Dashboard from './dashboard';
+import ViewSwitch from './view-switch';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,5 +16,5 @@ export default async function Page() {
   } catch {}
   if (!persons.length) persons = ['dhruv'];
 
-  return <Dashboard persons={persons} />;
+  return <ViewSwitch persons={persons} />;
 }

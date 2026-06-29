@@ -111,6 +111,27 @@ the intersection — it is never added to a total. The DB now enforces the lapto
 
 ---
 
+## Token-spend rules (Claude Code + Codex via ccusage)
+
+16. **One command, allowlist tagging.** Use `ccusage daily --json --timezone Asia/Kolkata
+    --offline` (it already includes ALL agent CLIs). Tag each `modelBreakdowns[]` row by an
+    explicit allowlist: `openclaw` → DROP, `gpt`/`codex` → `codex`, `claude`/`opus`/`sonnet`/
+    `haiku`/`fable` → `claude-code`, anything else (`<synthetic>`, empty, other agents) → DROP.
+    Never tag by a default-to-claude fallback.
+17. **Row id = `device|usage_date|model`** (NOT including `tool` — it's derived from model and
+    would create a duplicate if reclassified). Upsert `resolution=merge-duplicates`.
+18. **Reuse the activity `device_id`** (from `config.json`, else AW `/info`) so token rows map
+    to the same person via `devices`. Register the device first (`v_unmapped_devices` now also
+    covers token-only devices).
+19. **`--timezone Asia/Kolkata`** so day boundaries match laptop/phone. **`--offline`** so a
+    pricing fetch can't hang a scheduled run.
+20. **Backfill once with `-Full` / `--full`; scheduled runs use the trailing 45-day window**
+    (`--since`). Past days are immutable; bounding the re-push avoids re-touching old rows if a
+    future ccusage renames models. A monotonic-max trigger also stops a partial re-read from
+    lowering a day.
+21. **$ is notional.** ccusage prices tokens at API list rates; on a subscription it's value
+    extracted, not a bill. Never present it as real spend.
+
 ## Quick self-check before trusting a new number
 
 - Did a new device show up in `v_unmapped_devices`? → register it.

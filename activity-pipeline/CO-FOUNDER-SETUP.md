@@ -175,6 +175,47 @@ no-permanent-gaps guarantee as your Windows task (cursor + AW retention).
 
 ---
 
+## 2.5. Her laptop — token spend (Claude Code + Codex)
+
+Tracks how many AI tokens she burns, shown in the dashboard's **Tokens** view. Uses
+`ccusage` (reads her local `~/.claude` and `~/.codex` logs). Needs Node/npx (`npx --version`).
+
+1. Copy `co-founder/push-tokens.py` to her laptop next to `push-activity.py`. It **reuses the
+   same `config.json`** (same Supabase URL / anon key / device_id) — nothing new to configure.
+2. One-time full backfill:
+   ```bash
+   python3 push-tokens.py --full
+   ```
+   Expect "Done. Pushed N token rows." (Codex rows tagged `codex`, Claude rows `claude-code`;
+   OpenClaw/synthetic dropped.)
+3. Schedule it daily (trailing 45-day window) — a second systemd timer:
+   `~/.config/systemd/user/token-push.service`
+   ```ini
+   [Service]
+   Type=oneshot
+   ExecStart=/usr/bin/python3 /home/<her>/activity-pipeline/push-tokens.py
+   ```
+   `~/.config/systemd/user/token-push.timer`
+   ```ini
+   [Unit]
+   Description=Push token spend daily
+   [Timer]
+   OnCalendar=*-*-* 21:10
+   Persistent=true
+   [Install]
+   WantedBy=timers.target
+   ```
+   ```bash
+   systemctl --user daemon-reload && systemctl --user enable --now token-push.timer
+   ```
+   (`loginctl enable-linger` from section 2 already covers this.)
+
+Notes: `$` figures in the dashboard are **notional** (API-equivalent, not a bill). If
+`device_id` is null in her `config.json`, the pusher reads it from ActivityWatch `/info`, so
+AW should be running for the first run — or pin `device_id` in `config.json`.
+
+---
+
 ## 3. Her phone — same APK
 
 1. Send her `ActivityPusher.apk` (the one we built). Install via `adb install` (preferred —

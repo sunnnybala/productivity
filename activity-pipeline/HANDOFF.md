@@ -276,3 +276,29 @@ Ran two sub-agents (AW event semantics + pipeline audit) plus direct DB verifica
 - **Verified clean:** no window+web or window+afk double-count in any shipped surface;
   timezones aligned IST end-to-end; laptop dedup idempotent; both numbers verified against
   day-clipped merged-interval ground truth.
+
+---
+
+## 14. Token spend tracking (2026-06-29) — Claude Code + Codex
+
+Plan: `PLAN-token-spend.md` (eng-reviewed + Claude outside-voice review; Codex kept stalling).
+
+- **What:** per-person AI token usage in the dashboard's new **Tokens** view (day/week/month/
+  all-time), sourced from `ccusage` on each laptop. Reuses the activity rails.
+- **DB:** `token_usage` table (migration `...000600`) + `token_summary(person,from,to,bucket)`
+  RPC + `tu_sel` policy (`...000700`, the same ON-CONFLICT-needs-SELECT lesson). `v_unmapped_devices`
+  extended to cover token-only devices. Monotonic-max trigger guards partial re-reads.
+- **Pusher:** `token-pusher/push-tokens.ps1` (Windows) + `co-founder/push-tokens.py` (Linux).
+  Runs `ccusage daily --json --timezone Asia/Kolkata --offline`; allowlist tags tool
+  (openclaw/synthetic/unknown dropped); id = `device|usage_date|model`; reuses the activity
+  `config.json` + device_id. `-Full`/`--full` backfills; default = trailing 45-day window.
+  Windows Task Scheduler job "Token Spend Pusher" daily 21:05.
+- **Dashboard:** `app/ui.js` (shared primitives: generic `RankList`, `fmtTokens`/`fmtUSD`),
+  `app/tokens.js` (Tokens view), `app/api/tokens/route.js`, `app/view-switch.js` (Activity|Tokens
+  toggle). Activity view refactored onto the shared UI (DRY).
+- **Decisions:** track Claude Code + Codex (OpenClaw excluded — dormant); tokens headline, $
+  shown as labeled **notional**. ccusage `--live` is gone (v18); `claude-monitor` is the live tool.
+- **Verified:** backfill pushed 76 rows; claude-code 1.73B/$2,169, codex 667M/$457, all-time
+  2.40B/$2,626; RPC + auth confirmed; both numbers track the manual ccusage run.
+- **Gotcha logged:** `& npx @array` splatting breaks npx on Windows ("could not determine
+  executable") — call npx as a native token-by-token command instead.
