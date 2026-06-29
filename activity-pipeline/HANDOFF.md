@@ -61,7 +61,7 @@ Schema/migrations are in `activity-pipeline/supabase/`.
 
 **Tables**
 - `laptop_events` — one row per ActivityWatch event. Columns: `id` (deterministic
-  `device|bucket|event_id|ts`), `device_id`, `source` ∈ {`window`,`afk`,`web-<browser>`},
+  `device|bucket|ts` — NOT event_id; see §13/§14), `device_id`, `source` ∈ {`window`,`afk`,`web-<browser>`},
   `bucket`, `ts` (UTC), `duration_sec`, `app`, `title`, `url`, `category`(unused), `data`(jsonb).
 - `phone_app_usage` — one row per app per local day. `id` (`device|date|package`), `device_id`,
   `usage_date`, `package`, `app_label`, `minutes`.
