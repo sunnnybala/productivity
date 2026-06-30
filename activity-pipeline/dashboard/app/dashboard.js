@@ -45,7 +45,7 @@ export default function Dashboard({ persons }) {
   const maxDay = Math.max(1, ...days.map((d) => Number(d.laptop) + Number(d.phone)));
   const focused = Number(data?.laptop_min) || 0;
   const active = Number(data?.laptop_active_min) || 0;
-  const pctHands = focused > 0 ? Math.round((active / focused) * 100) : 0;
+  const pctHands = focused > 0 ? Math.min(100, Math.round((active / focused) * 100)) : 0;
   const total = focused + (Number(data?.phone_min) || 0);
   const toRows = (arr) => (arr || []).map((r) => ({ name: r.name, value: r.minutes }));
 

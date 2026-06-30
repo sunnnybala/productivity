@@ -61,18 +61,43 @@ function Get-Tool($model) {
   return $null                                                                  # <synthetic>, other agents
 }
 
-# ---- run ccusage ------------------------------------------------------------
-# NOTE: call npx as a native command, NOT `& npx @array` — array splatting breaks
-# npx arg parsing on Windows ("could not determine executable to run").
-try {
-  if ($Full) {
-    Log "running: npx -y ccusage@latest daily --json --timezone Asia/Kolkata --offline"
-    $raw = npx -y ccusage@latest daily --json --timezone Asia/Kolkata --offline 2>$null | Out-String
-  } else {
-    $since = (Get-Date).AddDays(-$WindowDays).ToString('yyyyMMdd')
-    Log ("running: npx -y ccusage@latest daily --json --timezone Asia/Kolkata --offline --since {0}" -f $since)
-    $raw = npx -y ccusage@latest daily --json --timezone Asia/Kolkata --offline --since $since 2>$null | Out-String
+# ---- run ccusage (HARD TIMEOUT + process-tree kill) -------------------------
+# If ccusage/npx hangs (npm registry fetch, network, huge logs), do NOT block
+# forever: kill the whole tree and exit. Without this, a hang + Task Scheduler
+# IgnoreNew policy would silently stop ALL future token runs. Captures stderr so
+# the real error is visible, not swallowed.
+function Invoke-Ccusage([string[]]$ccArgs, [int]$TimeoutSec) {
+  $o = [System.IO.Path]::GetTempFileName(); $e = [System.IO.Path]::GetTempFileName()
+  try {
+    # Route through cmd.exe: npx is a .cmd, which Start-Process can't CreateProcess directly
+    # (with redirects) — "%1 is not a valid Win32 application" otherwise.
+    $p = Start-Process -FilePath "cmd.exe" -ArgumentList (@('/c','npx') + $ccArgs) -NoNewWindow -PassThru `
+           -RedirectStandardOutput $o -RedirectStandardError $e
+    if (-not $p.WaitForExit($TimeoutSec * 1000)) {
+      cmd /c "taskkill /PID $($p.Id) /T /F" 2>$null | Out-Null
+      throw ("timed out after {0}s (process tree killed)" -f $TimeoutSec)
+    }
+    # Start-Process -PassThru gives an unreliable (often $null) ExitCode, so validate by
+    # output instead: empty stdout => failure (surface stderr); JSON is validated by the caller.
+    $out = Get-Content $o -Raw
+    if ([string]::IsNullOrWhiteSpace($out)) {
+      $err = Get-Content $e -Raw; if (-not $err) { $err = '(no stderr)' }
+      throw ("no output. stderr: {0}" -f (($err -replace '\s+',' ').Trim()))
+    }
+    return $out
+  } finally {
+    Remove-Item $o, $e -ErrorAction SilentlyContinue
   }
+}
+
+$ccArgs = @('-y','ccusage@latest','daily','--json','--timezone','Asia/Kolkata','--offline')
+if (-not $Full) {
+  $since = (Get-Date).AddDays(-$WindowDays).ToString('yyyyMMdd')
+  $ccArgs += @('--since', $since)
+}
+Log ("running: npx {0}" -f ($ccArgs -join ' '))
+try {
+  $raw = Invoke-Ccusage $ccArgs 180
   if ([string]::IsNullOrWhiteSpace($raw)) { throw "ccusage produced no output (is npx/ccusage available?)" }
   $json = $raw | ConvertFrom-Json
 } catch {

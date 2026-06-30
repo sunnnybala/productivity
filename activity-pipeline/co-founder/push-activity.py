@@ -6,7 +6,10 @@
 import json, os, sys, urllib.request, urllib.parse
 from datetime import datetime, timezone, timedelta
 
-cfg = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")))
+_cfgpath = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+if not os.path.exists(_cfgpath):
+    print("No config.json next to push-activity.py — copy config.example.json and fill it in."); sys.exit(1)
+cfg = json.load(open(_cfgpath))
 AW  = cfg.get("aw_base", "http://localhost:5600/api/0")
 SB  = cfg["supabase_url"].rstrip("/"); KEY = cfg["supabase_anon_key"]; BATCH = 500
 

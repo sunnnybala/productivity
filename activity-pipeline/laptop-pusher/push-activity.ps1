@@ -104,6 +104,7 @@ $buckets = (Invoke-RestMethod "$awBase/buckets/" -TimeoutSec 10).PSObject.Proper
            Where-Object { $_ -match "aw-watcher-(window|afk|web-)" }
 $nowIso = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss") + "+00:00"
 $grand = 0
+$pushFailed = $false   # so a chronic per-bucket failure surfaces as a non-zero task result
 
 foreach ($b in $buckets) {
   $source = Get-Source $b
@@ -152,8 +153,10 @@ foreach ($b in $buckets) {
     $grand += $rows.Count
   } catch {
     Log ("{0} : FAILED to push ({1}) - cursor not advanced, will retry next run" -f $source, $_.Exception.Message)
+    $pushFailed = $true
   }
 }
 
 if ($DryRun) { Log ("DRY RUN - nothing uploaded. Would have pushed {0} events." -f $grand) }
 else         { Log ("Done. Pushed {0} events." -f $grand) }
+if ($pushFailed -and -not $DryRun) { exit 1 }   # visible failure if any bucket couldn't push

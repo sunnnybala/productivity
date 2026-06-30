@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function Page() {
   const jar = await cookies();
-  if (jar.get('auth')?.value !== process.env.DASH_TOKEN) redirect('/login');
+  const expected = process.env.DASH_TOKEN;
+  if (!expected || jar.get('auth')?.value !== expected) redirect('/login');   // fail closed if token unset
 
   let persons = [];
   try {
