@@ -168,9 +168,9 @@ ExecStart=/usr/bin/python3 /home/<her>/activity-pipeline/push-activity.py
 `~/.config/systemd/user/aw-push.timer`:
 ```ini
 [Unit]
-Description=Daily ActivityWatch -> Supabase push
+Description=ActivityWatch -> Supabase push (every 5 min, matches Dhruv)
 [Timer]
-OnCalendar=*-*-* 21:00:00
+OnCalendar=*:0/5:00
 Persistent=true
 [Install]
 WantedBy=timers.target
@@ -209,9 +209,9 @@ Tracks how many AI tokens she burns, shown in the dashboard's **Tokens** view. U
    `~/.config/systemd/user/token-push.timer`
    ```ini
    [Unit]
-   Description=Push token spend daily
+   Description=Push token spend (every 30 min, matches Dhruv)
    [Timer]
-   OnCalendar=*-*-* 21:10
+   OnCalendar=*:0/30:00
    Persistent=true
    [Install]
    WantedBy=timers.target

@@ -25,7 +25,7 @@ Repo (public): **https://github.com/sunnnybala/productivity**
 
 | Piece | Status | Where |
 |---|---|---|
-| Dhruv laptop → Supabase | ✅ live, scheduled | Windows Task "ActivityWatch Supabase Pusher" (daily 21:00 + logon) |
+| Dhruv laptop → Supabase | ✅ live, scheduled | Windows Tasks: "ActivityWatch Supabase Pusher" (every 5 min) + "Token Spend Pusher" (every 30 min) |
 | Dhruv phone → Supabase | ✅ live | OnePlus 11R, ActivityPusher app, daily WorkManager |
 | Ria laptop → Supabase | ✅ live | EndeavourOS (host `ukiyo`), systemd timer (set up by her agent) |
 | Ria phone → Supabase | ✅ live | realme narzo 60, ActivityPusher app |
@@ -111,7 +111,7 @@ on conflict (device_id) do update set person=excluded.person, kind=excluded.kind
 Linux/macOS — these are the canonical, identical-logic pushers). Read AW `/api/0`, incremental
 via `sync_state` cursor (with 5-min overlap re-read), idempotent upsert (deterministic id +
 `resolution=merge-duplicates`). Push window/afk/web-* (and `awatcher` for Wayland). Windows runs
-via Task Scheduler (daily 21:00 + logon + catch-up); Linux via systemd user timer + `loginctl
+via Task Scheduler (activity every 5 min, tokens every 30 min); Linux via systemd user timer + `loginctl
 enable-linger`. No permanent gaps (AW retains history; cursor backfills).
 
 **Phone app** (`phone-app/`, Kotlin; built APK = `activity-pipeline/ActivityPusher.apk`).
@@ -187,8 +187,9 @@ Dual-model (Codex + independent Claude subagent), repeatedly:
 3. **Dashboard password is a weak dictionary word + no rate limiting.** A Vercel Firewall
    rate-limit rule on `/api/login` was recommended but NOT added. Either strengthen the password
    (in Vercel env `DASH_PASSWORD`) or add the rule. (Actual password is shared out-of-band.)
-4. **Freshness lag:** once-daily push means the current day is partial until the next run. Could
-   bump pushers to hourly for a more "live" dashboard. (Owner chose once-daily.)
+4. **Freshness:** RESOLVED — laptop pushers now run frequently (activity every 5 min, tokens
+   every 30 min on Dhruv's machine), so the dashboard/widgets are near-live. Phone is still
+   daily + on-app-open (deliberate, ColorOS battery + WorkManager won't reliably do better).
 5. **Phone browser URLs — PARKED.** Phone captures app-level only ("Chrome 90m", not sites).
    Full URLs need an Android AccessibilityService (researched: doable but invasive/fragile, and
    per-URL minutes are only approximate). Domain-level alternative = a local VPN logger. Owner

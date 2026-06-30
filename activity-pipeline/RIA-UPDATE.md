@@ -48,17 +48,20 @@ Tracks Claude Code + Codex token usage from your local `~/.claude` and `~/.codex
 cp co-founder/push-tokens.py .            # if not already pulled in place
 python3 push-tokens.py --full             # one-time backfill; expect "Done. Pushed N token rows."
 ```
-Then schedule it (and ideally re-schedule the activity pusher) to run **hourly** so the dashboard
-stays fresh — exact systemd timer unit files are in `CO-FOUNDER-SETUP.md` §2.5 (use `OnCalendar=hourly`
-or `*-*-* *:05:00`). Notes: `$` figures are **notional** (API-equivalent, not a bill); OpenClaw is
-excluded by design.
+Then schedule it via a systemd timer — see `CO-FOUNDER-SETUP.md` §2.5. Notes: `$` figures are
+**notional** (API-equivalent, not a bill); OpenClaw is excluded by design.
 
 ---
 
-## 3. Make it fresh (hourly) — important
+## 3. Make it fresh — match Dhruv's cadence
 
-For both pushers, prefer an **hourly** schedule (not once-a-day), or the dashboard/wallpaper shows
-stale numbers for hours. systemd timer with `OnCalendar=*-*-* *:00:00` + `Persistent=true`.
+Dhruv runs **activity every 5 min** and **tokens every 30 min** so the dashboard/widgets are
+near-live. Set your systemd timers to match:
+- activity (`aw-push.timer`): `OnCalendar=*:0/5:00`
+- tokens (`token-push.timer`): `OnCalendar=*:0/30:00`
+
+Both with `Persistent=true`. Then `systemctl --user daemon-reload && systemctl --user restart
+aw-push.timer token-push.timer`. (Phone stays daily — same as Dhruv.)
 
 ---
 
