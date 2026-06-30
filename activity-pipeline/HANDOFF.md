@@ -360,3 +360,26 @@ is the apples-to-apples comparison; showing focused is deliberate.
 
 **Considered + declined (2026-06-30):** marking apps "always active" / a media watcher (would make
 watching-Claude count as active). User chose to keep it strict.
+
+---
+
+## 17. Token task "battery refusal" bug (debugged 2026-06-30)
+
+**Symptom:** "Token Spend Pusher" scheduled task showed Last Result `0x800710E0`; token data
+stale ~19h. (Activity looked fresh only because it runs every 5 min and caught an AC window.)
+
+**Root cause:** `schtasks /Create` defaults to **`DisallowStartIfOnBatteries=true`** and
+**`StopIfGoingOnBatteries=true`**. On a laptop that runs unplugged a lot, Task Scheduler
+**refuses** the task on battery → `0x800710E0` = "The operator or administrator has refused the
+request." Both pushers had this flag (activity too — it silently stalls on battery and backfills
+via the cursor on AC, so no data loss, just lag). NOT a PATH or pusher-code issue (node/npx are on
+the machine PATH; the pusher pushes fine on AC — verified).
+
+**Fix:** exported each task XML, set `DisallowStartIfOnBatteries=false` +
+`StopIfGoingOnBatteries=false`, re-imported via `schtasks /Create /XML /F`. Verified both tasks
+now return Last Result `0`. Triggers unchanged (activity PT5M, tokens PT30M).
+
+**Gotcha for the future:** any new `schtasks`-created task on this laptop inherits the battery
+block — disable it the same way, or create tasks via `Register-ScheduledTask` with
+`-Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries)`
+(needs elevation). **Ria's Linux systemd timers are unaffected** — systemd has no battery condition.
