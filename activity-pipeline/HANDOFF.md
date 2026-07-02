@@ -383,3 +383,17 @@ now return Last Result `0`. Triggers unchanged (activity PT5M, tokens PT30M).
 block — disable it the same way, or create tasks via `Register-ScheduledTask` with
 `-Settings (New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries)`
 (needs elevation). **Ria's Linux systemd timers are unaffected** — systemd has no battery condition.
+
+---
+
+## 18. Hidden pusher launch (2026-07-02)
+
+**Symptom:** a terminal window flashed open ~5s every 5 min (the activity pusher's runtime).
+**Cause:** the scheduled tasks ran `powershell.exe -WindowStyle Hidden` under an *interactive*
+logon (`LogonType=InteractiveToken`) — that still allocates a visible console for the script's
+runtime; `-WindowStyle Hidden` only hides the PS window, not the initial console. Noticeable at
+the 5-min activity cadence.
+**Fix:** both Windows tasks now launch via `laptop-pusher/run-hidden.vbs`
+(`wscript.exe "run-hidden.vbs" "<pusher>.ps1"`), which starts PowerShell with window style 0
+(SW_HIDE) — truly no window, no flash. Triggers (5 min / 30 min) + battery-off settings preserved;
+verified both still push. (Ria's Linux systemd timers are silent already — no change needed.)
