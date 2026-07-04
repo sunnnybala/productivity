@@ -67,26 +67,22 @@ function Get-Tool($model) {
 # IgnoreNew policy would silently stop ALL future token runs. Captures stderr so
 # the real error is visible, not swallowed.
 function Invoke-Ccusage([string[]]$ccArgs, [int]$TimeoutSec) {
-  $o = [System.IO.Path]::GetTempFileName(); $e = [System.IO.Path]::GetTempFileName()
+  # Run inside a background JOB (its own runspace — no console/stdio needed, so it works when the
+  # task launches this script windowless via wscript). `cmd /c` so npx.cmd resolves. The job gives
+  # us the timeout; on timeout we stop it and kill any orphaned ccusage node process.
+  $cmdline = 'npx ' + ($ccArgs -join ' ')
+  $job = Start-Job -ScriptBlock { param($c) (cmd /c $c 2>$null | Out-String) } -ArgumentList $cmdline
   try {
-    # Route through cmd.exe: npx is a .cmd, which Start-Process can't CreateProcess directly
-    # (with redirects) — "%1 is not a valid Win32 application" otherwise.
-    $p = Start-Process -FilePath "cmd.exe" -ArgumentList (@('/c','npx') + $ccArgs) -NoNewWindow -PassThru `
-           -RedirectStandardOutput $o -RedirectStandardError $e
-    if (-not $p.WaitForExit($TimeoutSec * 1000)) {
-      cmd /c "taskkill /PID $($p.Id) /T /F" 2>$null | Out-Null
-      throw ("timed out after {0}s (process tree killed)" -f $TimeoutSec)
+    if (-not (Wait-Job $job -Timeout $TimeoutSec)) {
+      Stop-Job $job -ErrorAction SilentlyContinue
+      Get-CimInstance Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -match 'ccusage' } |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+      throw ("timed out after {0}s (killed)" -f $TimeoutSec)
     }
-    # Start-Process -PassThru gives an unreliable (often $null) ExitCode, so validate by
-    # output instead: empty stdout => failure (surface stderr); JSON is validated by the caller.
-    $out = Get-Content $o -Raw
-    if ([string]::IsNullOrWhiteSpace($out)) {
-      $err = Get-Content $e -Raw; if (-not $err) { $err = '(no stderr)' }
-      throw ("no output. stderr: {0}" -f (($err -replace '\s+',' ').Trim()))
-    }
-    return $out
+    return (Receive-Job $job)
   } finally {
-    Remove-Item $o, $e -ErrorAction SilentlyContinue
+    Remove-Job $job -Force -ErrorAction SilentlyContinue
   }
 }
 
