@@ -38,3 +38,6 @@ local.properties
 # ---- os ----
 .DS_Store
 Thumbs.db
+
+# live-credential handoff — never commit (public mirror would leak it)
+**/SECRETS-HANDOFF.md
